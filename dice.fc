@@ -372,7 +372,7 @@ int calc_payout(int amount, int roll_under, int fee) {
     slice possible_ref_addr = begin_cell().store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
     possible_ref_addr~skip_bits(4);
 
-    if (slice_equal(possible_ref_addr, s_addr) | slice_equal(possible_ref_addr, my_address())) {
+    ifnot (slice_equal(possible_ref_addr, s_addr) | slice_equal(possible_ref_addr, my_address())) {
       ref_addr = possible_ref_addr;
       fee -= 1; ;; player bonus
       ref_bonus = pure_amt * 5 / 100;
