@@ -225,6 +225,10 @@ int is_sep(int code, int sep) inline_ref {
   return (sub_str(s, start, offset), start + offset);
 }
 
+int slice_equal(s1, s2) {
+  return slice_hash(s1) == slice_hash(s2);
+}
+
 slice decode(slice s) {
     int size = slice_bits(s);
     throw_if(40, size != 384);
@@ -272,8 +276,8 @@ int get_random_roll(slice sig) {
   return seed % 12 + 1;
 }
 
-int calc_payout(int amount, int roll_under) {
-  return amount * 11 / (roll_under - 1);
+int calc_payout(int amount, int roll_under, int fee) {
+  return amount * (100 - fee) / (roll_under - 1);
 }
 
 (slice, int) get_bet?(int id) {
@@ -289,6 +293,8 @@ int calc_payout(int amount, int roll_under) {
   int roll_under = bet~load_uint(8);
   int amount = bet~load_grams();
   slice player_addr = bet~load_msg_addr();
+  slice ref_addr = bet~load_msg_addr();
+  int ref_bonus = bet~load_grams();
 
   int seed = bet~load_uint(256);
   throw_unless(34, check_signature(seed, sig, public_key));
@@ -298,7 +304,11 @@ int calc_payout(int amount, int roll_under) {
 
   accept_message();
 
-  int possible_payout = calc_payout(amount, roll_under); ;; without guarantee
+  int fee = 2;
+  if (ref_bonus > 0) {
+    fee -= 1; ;; player bonus
+  }
+  int possible_payout = calc_payout(amount, roll_under, fee); ;; without guarantee
   int random_roll = get_random_roll(sig);
 
   int payout = 1000000000; ;; guarantee
@@ -308,6 +318,13 @@ int calc_payout(int amount, int roll_under) {
 
   slice msg = begin_cell().store_uint(bet_id, 32).store_uint(roll_under, 8).end_cell().begin_parse();
   send_message_back(player_addr, msg, payout, 2);
+
+  if (ref_bonus > 0) {
+    msg = begin_cell().store_uint(0, 1).end_cell().begin_parse();
+    send_message_back(ref_addr, msg, ref_bonus, 2);
+    locked -= ref_bonus;
+  }
+
   locked -= 1000000000;
   locked -= possible_payout;
 
@@ -328,31 +345,49 @@ int calc_payout(int amount, int roll_under) {
   var flags = cs~load_uint(4);  ;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
   var s_addr = cs~load_msg_addr();
 
-  (slice remainder, cell ref) = load_ref(in_msg);
-  var (part1, n) = slice_to_sep(remainder, 32);
-  var (part2, n) = slice_to_sep(remainder, n + 8);
-  var (part3, _) = slice_to_sep(remainder, n + 8);
+  int size = slice_bits(in_msg);
+  var (part1, n) = slice_to_sep(in_msg, 32);
+  var (part2, n) = slice_to_sep(in_msg, n + 8);
+
+  int fee = 2;
+  int ref_bonus = 0;
+  slice ref_addr = my_address();
+  int pure_amt = msg_value - 1000000000; ;; without guarantee
+  n += 8;
+  if (n < size) {
+    (_, cell ref) = load_ref(in_msg);
+    int size_ref = ref.begin_parse().slice_bits();
+    int valid_size = size - n + size_ref;
+    throw_if(40, valid_size != 384);
+
+    var (part3, _) = slice_to_sep(in_msg, n);
+    var addr = begin_cell().store_slice(part3).store_slice(ref.begin_parse()).end_cell().begin_parse();
+    
+    slice res = decode(addr);
+    res~skip_bits(8);
+    slice wc = first_bits(res, 2);
+    res~skip_bits(8);
+    res~skip_last_bits(16);
+
+    slice possible_ref_addr = begin_cell().store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
+    possible_ref_addr~skip_bits(4);
+
+    if (slice_equal(possible_ref_addr, s_addr) | slice_equal(possible_ref_addr, my_address())) {
+      ref_addr = possible_ref_addr;
+      fee -= 1; ;; player bonus
+      ref_bonus = pure_amt * 5 / 100;
+    }
+  }
 
   int roll_under = str_to_num(part1);
-  throw_if(40, (roll_under < 2) | (roll_under > 11));
+  throw_if(40, (roll_under < 2) | (roll_under > 98));
   int bet_id = str_to_num(part2);
   throw_if(41, bet_id > 9999);
 
-  var addr = begin_cell().store_slice(part3).store_slice(ref.begin_parse()).end_cell().begin_parse();
-  slice res = decode(addr);
-  res~skip_bits(8);
-  slice wc = first_bits(res, 2);
-  res~skip_bits(8);
-  res~skip_last_bits(16);
-
-  slice ref_addr = begin_cell().store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
-  ref_addr~skip_bits(4);
-
   var (_, _, _, locked) = load_data();
   int bank = first(get_balance());
-  int pure_amt = msg_value - 1000000000; ;; without guarantee
-  int possible_payout = calc_payout(pure_amt, roll_under);
-  int liabilities = possible_payout + locked + 1000000000; ;; with guarantee
+  int possible_payout = calc_payout(pure_amt, roll_under, fee);
+  int liabilities = possible_payout + ref_bonus + locked + 1000000000; ;; with guarantee
   if (bank < liabilities) {
       slice msg = begin_cell().store_uint(bet_id, 32).end_cell().begin_parse();
       send_message_back(s_addr, msg, 0, 64);
@@ -364,6 +399,7 @@ int calc_payout(int amount, int roll_under) {
       .store_grams(pure_amt)
       .store_slice(s_addr)
       .store_slice(ref_addr)
+      .store_grams(ref_bonus)
     .end_cell().begin_parse();
     
   randomize_lt();
