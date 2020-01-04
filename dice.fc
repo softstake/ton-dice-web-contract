@@ -273,7 +273,7 @@ slice decode(slice s) {
 
 int get_random_roll(slice sig) {
   int seed = slice_hash(sig);
-  return seed % 12 + 1;
+  return seed % 100 + 1;
 }
 
 int calc_payout(int amount, int roll_under, int fee) {
@@ -295,7 +295,6 @@ int calc_payout(int amount, int roll_under, int fee) {
   slice player_addr = bet~load_msg_addr();
   slice ref_addr = bet~load_msg_addr();
   int ref_bonus = bet~load_grams();
-
   int seed = bet~load_uint(256);
   throw_unless(34, check_signature(seed, sig, public_key));
 
@@ -308,6 +307,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   if (ref_bonus > 0) {
     fee -= 1; ;; player bonus
   }
+
   int possible_payout = calc_payout(amount, roll_under, fee); ;; without guarantee
   int random_roll = get_random_roll(sig);
 
@@ -320,7 +320,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   send_message_back(player_addr, msg, payout, 2);
 
   if (ref_bonus > 0) {
-    msg = begin_cell().store_uint(0, 1).end_cell().begin_parse();
+    msg = begin_cell().store_uint(0, 1).end_cell().begin_parse(); ;; x{746F6E3737372E696F} STSLICECONST
     send_message_back(ref_addr, msg, ref_bonus, 2);
     locked -= ref_bonus;
   }
@@ -375,7 +375,7 @@ int calc_payout(int amount, int roll_under, int fee) {
     ifnot (slice_equal(possible_ref_addr, s_addr) | slice_equal(possible_ref_addr, my_address())) {
       ref_addr = possible_ref_addr;
       fee -= 1; ;; player bonus
-      ref_bonus = pure_amt * 5 / 100;
+      ref_bonus = pure_amt * 5 / 1000;
     }
   }
 
@@ -452,7 +452,7 @@ int get_seqno() method_id {
 int get_bet_seed(int bet_id) method_id {
     var (bet, found) = get_bet?(bet_id);
     throw_unless(61, found);
-    (_, _, _, int seed) = (bet~load_uint(8), bet~load_grams(), bet~load_msg_addr(), bet~load_uint(256));
+    (_, _, _, _, _, int seed) = (bet~load_uint(8), bet~load_grams(), bet~load_msg_addr(), bet~load_msg_addr(), bet~load_grams(), bet~load_uint(256));
     return seed;
 }
 
