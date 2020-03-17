@@ -1,4 +1,4 @@
 # ton-dice-web-contract
 
-Usage: 
+## Usage
 ```./build.sh <workchain_id> [<file_base>] [<code_fif>]```
