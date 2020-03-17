@@ -315,7 +315,3 @@ int get_liabilities() method_id {
   (_, _, _, int locked) = load_data();
   return locked;
 }
-
-slice get_by_slice(slice s) method_id {
-  return s;
-}
