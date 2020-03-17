@@ -1,3 +1,5 @@
+#!/usr/bin/fift -s
+
 "TonUtil.fif" include
 
 { ."usage: " @' $0 type ."<filename-base> <dice-addr> <seqno> <bet-id> <seed> [<savefile>]" cr

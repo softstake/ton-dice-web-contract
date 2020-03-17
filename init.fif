@@ -1,0 +1,50 @@
+#!/usr/bin/fift -s
+
+"TonUtil.fif" include
+"Asm.fif" include
+
+{ ."usage: " @' $0 type ." <workchain-id> [<filename-base>] [-C <code-fif>]" cr
+  ."Creates a new dice game contract, with private key saved to or loaded from <filename-base>.pk ('dice.pk' by default)." cr
+} : usage
+
+$# 1 < ' usage if // Checks that there's enough arguments
+
+// Parsing command-line arguments
+
+$1 parse-workchain-id =: wc
+def? $2 { @' $2 } { "dice" } cond constant file-base
+def? $3 { @' $3 } { "dice-compiled" } cond +".fif" include constant contract-code
+
+"dice-binary" =: save-file
+
+."Creating new contract in workchain " wc . cr
+
+file-base +".pk" load-generate-keypair
+=: private-key
+=: public-key
+
+dictnew constant init-queue-dict
+
+<b 0 32 u, public-key B, init-queue-dict dict, 0 Gram, b> // initial persistance data
+null
+// no libraries
+<b b{0011} s, contract-code ref, rot ref, swap dict, b> // StateInit: code, data, libs
+
+dup hashu wc swap 2constant smartcont-addr // create address == hash(StateInit)
+
+<b 0 32 u, x{11111111} s, b> // body
+dup hashu private-key ed25519_sign_uint // create signature of body
+
+<b b{1000100} s, smartcont-addr addr, b{000010} s, 3 roll <s s, b{0} s, swap B, swap ref, b> // enveloping message
+
+// save to binary file
+
+2 boc+>B dup Bx. cr
+save-file +".boc" tuck B>file
+."(Saved to file " type .")" cr
+
+// about info
+
+."addr" smartcont-addr .addr
+."Non-bounceable address (for init): " smartcont-addr 7 .Addr cr
+."Bounceable address (for later access): " smartcont-addr 6 .Addr cr
