@@ -11,7 +11,7 @@ workchain_id=$1
 file_base=$2s
 code_fif=$3
 
-# Compiled
+# Compile
 func -SPA -o dice-compiled.fif ./stdlib.fc ./dice-code.fc
 
 # Build
