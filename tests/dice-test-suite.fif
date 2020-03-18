@@ -53,16 +53,12 @@ exit_code !
 ."Exit code " exit_code @ . cr
 exit_code @ 33 <> abort"Test #1 Not passed"
 
-// Test #2. Send invalid signature.
-
-"../keys/for-tests.pk" load-generate-keypair
-=: test-private-key
-drop
+// Test #2. Check owner's signature. Test must send correct seqno and correct signature expect 0.
 
 <b 0 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
 
 <b 0 32 u, x{11111111} s, b> message-to-sign !
-message-to-sign @ hashu test-private-key ed25519_sign_uint signature !
+message-to-sign @ hashu owner_private_key ed25519_sign_uint signature !
 <b signature @ B, message-to-sign @ ref, b> <s message-to-send !
 
 message-to-send @
@@ -77,4 +73,30 @@ variable exit_code
 drop
 exit_code !
 ."Exit code " exit_code @ . cr
-exit_code @ 34 <> abort"Test #1 Not passed"
+exit_code @ 0 <> abort"Test #2 Not passed"
+
+// Test #3. Throw exception when wrong signature provided.
+
+"../keys/not-owner.pk" load-generate-keypair
+=: not-owner-private-key
+drop
+
+<b 0 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+
+<b 0 32 u, x{11111111} s, b> message-to-sign !
+message-to-sign @ hashu not-owner-private-key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 34 <> abort"Test #3 Not passed"
