@@ -1,0 +1,80 @@
+#!/usr/bin/fift -s
+
+"TonUtil.fif" include
+"Asm.fif" include
+"../build/dice-compiled.fif" include constant contract-code
+
+0 tuple 0x076ef1ea , // magic
+0 , 0 , // actions msg_sents
+1570998536 , // unix_time
+1 , 1 , 3 , // block_lt, trans_lt, rand_seed
+0 tuple 100000000000000 , dictnew , , // remaining balance
+0 , dictnew , // contract_address, global_config
+1 tuple // wrap to another tuple
+constant c7
+
+true constant bounce
+
+0 constant recv_internal // to run recv_internal()
+-1 constant recv_external // to invoke recv_external()
+
+"../keys/owner.pk" file>B constant owner_private_key
+owner_private_key priv>pub constant owner_public_key
+
+"../addresses/owner.addr" load-address
+2dup 2constant contract-addr
+
+dictnew constant init-queue-dict
+
+variable storage
+variable message-to-sign
+variable message-to-send
+variable signature
+
+// Test #1. Send wrong sequence number.
+
+<b 0 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+
+<b 1 32 u, x{11111111} s, b> message-to-sign !
+message-to-sign @ hashu owner_private_key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 33 <> abort"Test #1 Not passed"
+
+// Test #2. Send invalid signature.
+
+"../keys/for-tests.pk" load-generate-keypair
+=: test-private-key
+drop
+
+<b 0 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+
+<b 0 32 u, x{11111111} s, b> message-to-sign !
+message-to-sign @ hashu test-private-key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 34 <> abort"Test #1 Not passed"

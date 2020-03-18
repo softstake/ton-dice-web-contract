@@ -16,6 +16,16 @@ then
     mkdir build
 fi
 
+if [[ ! -d "./keys" ]]
+then
+    mkdir keys
+fi
+
+if [[ ! -d "./addresses" ]]
+then
+    mkdir addresses
+fi
+
 # Compile
 func -SPA -o dice-compiled.fif ./stdlib.fc ./dice-code.fc
 
@@ -23,3 +33,5 @@ func -SPA -o dice-compiled.fif ./stdlib.fc ./dice-code.fc
 fift -s init.fif $workchain_id $file_base $code_fif
 
 mv dice-compiled.fif *.boc ./build
+mv *.pk ./keys
+mv *.addr ./addresses

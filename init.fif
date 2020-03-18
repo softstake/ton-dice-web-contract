@@ -12,7 +12,7 @@ $# 1 < ' usage if // Checks that there's enough arguments
 // Parsing command-line arguments
 
 $1 parse-workchain-id =: wc
-def? $2 { @' $2 } { "dice" } cond constant file-base
+def? $2 { @' $2 } { "owner" } cond constant file-base
 def? $3 { @' $3 } { "dice-compiled" } cond +".fif" include constant contract-code
 
 "dice-binary" =: save-file
@@ -48,3 +48,5 @@ save-file +".boc" tuck B>file
 ."addr" smartcont-addr .addr
 ."Non-bounceable address (for init): " smartcont-addr 7 .Addr cr
 ."Bounceable address (for later access): " smartcont-addr 6 .Addr cr
+
+smartcont-addr file-base +".addr" save-address-verbose
