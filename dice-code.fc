@@ -161,14 +161,14 @@ int calc_payout(int amount, int roll_under, int fee) {
   }
 
   ;; PASTE THIS INTO A COMPILED FILE
-  ;; "ton777.io - lucky number " - x{746F6E3737372E696F202D206C75636B79206E756D62657220} STSLICECONST
+  ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
   ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
   slice msg = begin_cell().store_slice(num_to_str(random_roll)).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
   send_message_back(player_addr, msg, payout, 2);
 
   if (ref_bonus > 0) {
     ;; PASTE THIS INTO A COMPILED FILE
-    ;; "Play on ton777.io" x{506C6179206F6E20746F6E3737372E696F} STSLICECONST
+    ;; "Play on TONBET.IO" - x{506C6179206F6E20544F4E4245542E494F} STSLICECONST
     msg = begin_cell().store_uint(0, 1).end_cell().begin_parse();
     send_message_back(ref_addr, msg, ref_bonus, 2);
     locked -= ref_bonus;
