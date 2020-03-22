@@ -226,3 +226,134 @@ is-ref-bonus-equal @ 1 +
 abort"Test 4 failed. Reason: stored bet referral bonus is different from target."
 
 stored-bet-seed @ 0 = abort"Test 4 failed. Reason: stored bet seed is null."
+
+// Test #5. Empty internal message.
+
+variable seqno
+0 seqno !
+variable locked-grams
+0 locked-grams !
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+
+"../addresses/sender.addr" load-address
+2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
+
+<b b> <s message-to-send !
+
+<b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 0 - abort"Test #5 Not passed"
+
+// Test #6. Incorrect roll under.
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+
+"../addresses/sender.addr" load-address
+2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
+
+variable roll-under
+97 roll-under !
+variable bet-id
+19 bet-id !
+variable amount
+2000000000 amount !
+
+roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+<b 0 32 u, game-params $, b> <s message-to-send !
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 40 <> abort"Test #6 Not passed"
+
+// Test #7. Incorrect bet id.
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+
+"../addresses/sender.addr" load-address
+2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
+
+variable roll-under
+96 roll-under !
+variable bet-id
+10000 bet-id !
+variable amount
+2000000000 amount !
+
+roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+<b 0 32 u, game-params $, b> <s message-to-send !
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 41 <> abort"Test #7 Not passed"
+
+// Test #8. Incorrect separator.
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+
+"../addresses/sender.addr" load-address
+2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
+
+variable roll-under
+96 roll-under !
+variable bet-id
+9999 bet-id !
+variable amount
+2000000000 amount !
+
+roll-under @ (.) +"*" bet-id @ (.) $+ constant game-params
+<b 0 32 u, game-params $, b> <s message-to-send !
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 42 <> abort"Test #8 Not passed"

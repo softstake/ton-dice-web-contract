@@ -235,7 +235,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   }
 
   int roll_under = str_to_num(part1);
-  throw_if(40, (roll_under < 2) | (roll_under > 98));
+  throw_if(40, (roll_under < 2) | (roll_under > 96));
   int bet_id = str_to_num(part2);
   throw_if(41, bet_id > 9999);
 
