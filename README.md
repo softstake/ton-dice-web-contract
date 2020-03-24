@@ -6,3 +6,6 @@
 
 ## Tests
 ```./test.sh```
+
+
+## Logic description
