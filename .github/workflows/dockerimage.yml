@@ -13,5 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag $GITHUB_REPOSITORY:$GITHUB_SHA --build-arg GITHUB_TOKEN=${{secrets.ACCESS_TOKEN}}
+      - name: Clone repo
+        run: |
+          git config --global url."https://${{secrets.ACCESS_TOKEN}}:@github.com/".insteadOf "https://github.com/"
+          git clone https://github.com/$GITHUB_REPOSITORY
+        
+      - name: Build the Docker image
+        run: |
+          cd $GITHUB_REPOSITORY
+          docker build . --file Dockerfile --tag $GITHUB_REPOSITORY:$GITHUB_SHA --build-arg GITHUB_TOKEN=${{secrets.ACCESS_TOKEN}}
