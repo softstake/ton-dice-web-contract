@@ -16,7 +16,7 @@ jobs:
       - name: Clone repo
         run: |
           git config --global url."https://${{secrets.ACCESS_TOKEN}}:@github.com/".insteadOf "https://github.com/"
-          git clone https://github.com/$GITHUB_REPOSITORY
+          git clone https://github.com/tonradar/ton-dice-web-contract.git
         
       - name: Build the Docker image
         run: |
