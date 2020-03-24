@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone repo
-        run: |
-          git config --global url."https://${{secrets.ACCESS_TOKEN}}:@github.com/".insteadOf "https://github.com/"
-          git clone https://github.com/$GITHUB_REPOSITORY
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: ton-dice-web-contract
         
       - name: Build the Docker image
         run: |
