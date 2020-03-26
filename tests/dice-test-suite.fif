@@ -154,7 +154,7 @@ stored-locked !
 
 stored-seqno @ seqno @ <> abort"Test 4 failed. Reason: stored seqno is different from target."
 
-amount @ 1000000000 - amount !
+// amount @ 1000000000 - amount !
 
 variable fee
 2 fee !
@@ -162,7 +162,7 @@ variable fee
 { amount @ 100 fee @ - * roll-under @ 1- / } : calc-payout
 
 variable expected-payout
-calc-payout 1000000000 + expected-payout !
+calc-payout expected-payout !
 
 expected-payout @ stored-locked @ = 1+ abort"Test 4 failed. Reason: stored liabilities is different from target."
 

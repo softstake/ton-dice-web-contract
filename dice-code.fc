@@ -152,13 +152,15 @@ int calc_payout(int amount, int roll_under, int fee) {
     fee -= 1; ;; player bonus
   }
 
-  int possible_payout = calc_payout(amount, roll_under, fee); ;; without guarantee
+  int possible_payout = calc_payout(amount, roll_under, fee);
   int random_roll = get_random_roll(sig);
 
-  int payout = 1000000000; ;; guarantee
+  int payout = 0;
   if (random_roll < roll_under) {
     payout += possible_payout; ;; with guarantee
   }
+
+  raw_reserve(payout + ref_bonus, 2); ;; (x, y) reserve at most x nanograms
 
   ;; PASTE THIS INTO A COMPILED FILE
   ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
@@ -174,7 +176,6 @@ int calc_payout(int amount, int roll_under, int fee) {
     locked -= ref_bonus;
   }
 
-  locked -= 1000000000;
   locked -= possible_payout;
 
   return set_data(begin_cell().store_uint(stored_seqno + 1, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
@@ -205,7 +206,6 @@ int calc_payout(int amount, int roll_under, int fee) {
   int fee = 2;
   int ref_bonus = 0;
   slice ref_addr = my_address();
-  int pure_amt = msg_value - 1000000000; ;; without guarantee
   n += 8;
   if (n < size) {
     (_, cell ref) = load_ref(in_msg);
@@ -215,7 +215,7 @@ int calc_payout(int amount, int roll_under, int fee) {
 
     var (part3, _) = slice_to_sep(in_msg, n);
     var addr = begin_cell().store_slice(part3).store_slice(ref.begin_parse()).end_cell().begin_parse();
-    
+
     slice res = decode(addr);
     res~skip_bits(8);
     slice wc = first_bits(res, 2);
@@ -230,7 +230,7 @@ int calc_payout(int amount, int roll_under, int fee) {
     ifnot (slice_equal(possible_ref_addr, s_addr) & slice_equal(possible_ref_addr, my_address())) {
       ref_addr = possible_ref_addr;
       fee -= 1; ;; player bonus
-      ref_bonus = pure_amt * 5 / 1000;
+      ref_bonus = msg_value * 5 / 1000;
     }
   }
 
@@ -241,8 +241,8 @@ int calc_payout(int amount, int roll_under, int fee) {
 
   var (_, _, _, locked) = load_data();
   int bank = first(get_balance());
-  int possible_payout = calc_payout(pure_amt, roll_under, fee);
-  int liabilities = possible_payout + ref_bonus + locked + 1000000000; ;; with guarantee
+  int possible_payout = calc_payout(msg_value, roll_under, fee);
+  int liabilities = possible_payout + ref_bonus + locked;
   if (bank < liabilities) {
       slice msg = begin_cell().store_uint(bet_id, 32).end_cell().begin_parse();
       send_message_back(s_addr, msg, 0, 64);
@@ -251,7 +251,7 @@ int calc_payout(int amount, int roll_under, int fee) {
 
   slice s = begin_cell()
       .store_uint(roll_under, 8)
-      .store_grams(pure_amt)
+      .store_grams(msg_value)
       .store_slice(s_addr)
       .store_slice(ref_addr)
       .store_grams(ref_bonus)
