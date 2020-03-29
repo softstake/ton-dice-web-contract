@@ -112,7 +112,7 @@ variable locked-grams
 2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
 
 variable roll-under
-95 roll-under !
+96 roll-under !
 variable bet-id
 19 bet-id !
 variable amount
@@ -154,15 +154,13 @@ stored-locked !
 
 stored-seqno @ seqno @ <> abort"Test 4 failed. Reason: stored seqno is different from target."
 
-amount @ 1000000000 - amount !
-
 variable fee
 2 fee !
 
 { amount @ 100 fee @ - * roll-under @ 1- / } : calc-payout
 
 variable expected-payout
-calc-payout 1000000000 + expected-payout !
+calc-payout expected-payout !
 
 expected-payout @ stored-locked @ = 1+ abort"Test 4 failed. Reason: stored liabilities is different from target."
 
