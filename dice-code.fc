@@ -158,20 +158,21 @@ int calc_payout(int amount, int roll_under, int fee) {
   int payout = 0;
   if (random_roll < roll_under) {
     payout += possible_payout; ;; with guarantee
+    ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
+    ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
+    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
+    send_message_back(player_addr, msg, payout, 2);
+  } else {
+    payout = 1;
+    ;; "TONBET.IO - random roll " - x{544F4E4245542E494F202D2072616E646F6D20726F6C6C20} STSLICECONST
+    ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
+    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D2072616E646F6D20726F6C6C20, 192).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
+    send_message_back(player_addr, msg, payout, 1);
   }
 
-  raw_reserve(payout + ref_bonus, 2); ;; (x, y) reserve at most x nanograms
-
-  ;; PASTE THIS INTO A COMPILED FILE
-  ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
-  ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
-  slice msg = begin_cell().store_slice(num_to_str(random_roll)).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
-  send_message_back(player_addr, msg, payout, 2);
-
   if (ref_bonus > 0) {
-    ;; PASTE THIS INTO A COMPILED FILE
     ;; "Play on TONBET.IO" - x{506C6179206F6E20544F4E4245542E494F} STSLICECONST
-    msg = begin_cell().store_uint(0, 1).end_cell().begin_parse();
+    slice msg = begin_cell().store_uint(0x506C6179206F6E20544F4E4245542E494F, 136).end_cell().begin_parse();
     send_message_back(ref_addr, msg, ref_bonus, 2);
     locked -= ref_bonus;
   }
@@ -222,9 +223,8 @@ int calc_payout(int amount, int roll_under, int fee) {
     res~skip_bits(8);
     res~skip_last_bits(16);
 
-    ;; PASTE THIS INTO A COMPILED FILE
     ;; b{1000100} STSLICECONST
-    slice possible_ref_addr = begin_cell().store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
+    slice possible_ref_addr = begin_cell().store_uint(68, 7).store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
     possible_ref_addr~skip_bits(4);
 
     ifnot (slice_equal(possible_ref_addr, s_addr) & slice_equal(possible_ref_addr, my_address())) {
