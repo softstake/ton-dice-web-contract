@@ -157,7 +157,7 @@ int calc_payout(int amount, int roll_under, int fee) {
 
   int payout = 0;
   if (random_roll < roll_under) {
-    payout += possible_payout; ;; with guarantee
+    payout += possible_payout;
     ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
     ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
     slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();

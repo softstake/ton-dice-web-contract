@@ -112,7 +112,7 @@ variable locked-grams
 2dup 2constant wallet-addr // -1:0000000000000000000000000000000000000000000000000000000000000000
 
 variable roll-under
-95 roll-under !
+96 roll-under !
 variable bet-id
 19 bet-id !
 variable amount
