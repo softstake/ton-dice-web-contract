@@ -1,0 +1,23 @@
+name: Develop Image Build Test
+
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: ton-dice-web-contract
+          ref: develop
+        
+      - name: Build the Docker image
+        run: |
+          cd ton-dice-web-contract
+          docker build . --file Dockerfile --tag $GITHUB_REPOSITORY:$GITHUB_SHA --build-arg GITHUB_TOKEN=${{secrets.ACCESS_TOKEN}}
