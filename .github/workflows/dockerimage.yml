@@ -20,4 +20,4 @@ jobs:
       - name: Build the Docker image
         run: |
           cd ton-dice-web-contract
-          docker build . --file Dockerfile --tag $GITHUB_REPOSITORY:$GITHUB_SHA --build-arg GITHUB_TOKEN=${{secrets.ACCESS_TOKEN}}
+          docker build . --file Dockerfile.test --tag $GITHUB_REPOSITORY:$GITHUB_SHA --build-arg GITHUB_TOKEN=${{secrets.ACCESS_TOKEN}}
