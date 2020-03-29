@@ -1,8 +1,10 @@
+
 name: Develop Image Build Test
 
 on:
   push:
     branches: [ develop ]
+
 
 jobs:
 
@@ -16,7 +18,7 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           path: ton-dice-web-contract
           ref: develop
-        
+
       - name: Build the Docker image
         run: |
           cd ton-dice-web-contract
