@@ -154,8 +154,6 @@ stored-locked !
 
 stored-seqno @ seqno @ <> abort"Test 4 failed. Reason: stored seqno is different from target."
 
-// amount @ 1000000000 - amount !
-
 variable fee
 2 fee !
 
