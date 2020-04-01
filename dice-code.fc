@@ -121,7 +121,7 @@ int get_random_roll(slice sig) {
 }
 
 int calc_payout(int amount, int roll_under, int fee) {
-  return amount * (100 - fee) / (roll_under - 1);
+  return amount * (((100 - fee) * 1000000000) / (roll_under - 1)) / 1000000000;
 }
 
 (slice, int) get_bet?(int id) {
@@ -201,12 +201,14 @@ int calc_payout(int amount, int roll_under, int fee) {
     throw_if(0, true);
   }
 
-  if (msg_value < 100000000) {
-    ;; "TONBET.IO - min bet is 0.1" - x{544F4E4245542E494F202D206D696E2062657420697320302E31}
-    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206D696E2062657420697320302E31, 208).end_cell().begin_parse();
-    send_message_back(s_addr, msg, 0, 64);
-    return ();
-  }
+  throw_if(42, msg_value < 100000000);
+
+  ;; if (msg_value < 100000000) {
+  ;;   ;; "TONBET.IO - min bet is 0.1" - x{544F4E4245542E494F202D206D696E2062657420697320302E31}
+  ;;   slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206D696E2062657420697320302E31, 208).end_cell().begin_parse();
+  ;;   send_message_back(s_addr, msg, 0, 64);
+  ;;   return ();
+  ;; }
 
   var (part1, n) = slice_to_sep(in_msg, 32); ;; roll_under
   var (part2, n) = slice_to_sep(in_msg, n + 8); ;; bet_id
@@ -249,23 +251,27 @@ int calc_payout(int amount, int roll_under, int fee) {
   var (_, _, _, locked) = load_data();
   int bank = first(get_balance());
   int possible_payout = calc_payout(msg_value, roll_under, fee);
-
-  int liabilities = possible_payout + ref_bonus + locked;
-  int available_balance = bank - liabilities;
+  int liabilities = possible_payout + ref_bonus;
+  int available_balance = bank - locked;
 
   ;; "TONBET.IO - fund overflow" - x{544F4E4245542E494F202D2066756E64206F766572666C6F77}
   slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D2066756E64206F766572666C6F77, 200).end_cell().begin_parse();
 
-  if (available_balance < 0) {
-    send_message_back(s_addr, msg, 0, 64);
-    return ();
-  }
+  ;; if (available_balance < 0) {
+  ;;   send_message_back(s_addr, msg, 0, 64);
+  ;;   return ();
+  ;; }
+
+  throw_if(43, available_balance < 0);
 
   int max_win = available_balance / 4;
-  if (possible_payout >= max_win) {
-    send_message_back(s_addr, msg, 0, 64);
-    return ();
-  }
+
+  throw_if(44, possible_payout > max_win);
+
+  ;; if (possible_payout > max_win) {
+  ;;   send_message_back(s_addr, msg, 0, 64);
+  ;;   return ();
+  ;; }
 
   slice s = begin_cell()
       .store_uint(roll_under, 8)
@@ -282,7 +288,7 @@ int calc_payout(int amount, int roll_under, int fee) {
     .end_cell().begin_parse()));
 
   int rand_seed = random();
-  return add_to_queue(bet_id, s, rand_seed, liabilities - locked);
+  return add_to_queue(bet_id, s, rand_seed, liabilities);
 }
 
 () recv_external(slice in_msg) impure {

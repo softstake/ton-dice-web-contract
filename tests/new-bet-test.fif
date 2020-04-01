@@ -1,0 +1,126 @@
+// Test #4. Sending an internal message with the correct game parameters -> a new bet should appear in the storage.
+
+"test-env.fif" include
+
+variable seqno
+0 seqno !
+variable locked-grams
+0 locked-grams !
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+
+variable roll-under
+96 roll-under !
+variable bet-id
+19 bet-id !
+variable amount
+2 Gram* amount !
+
+roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+<b 0 32 u, game-params $, b> <s message-to-send !
+
+<b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+storage !
+
+// == Parse storage to check
+
+variable stored-slice
+variable stored-seqno
+variable stored-pubkey
+variable stored-queue
+variable stored-locked
+
+storage @ <s stored-slice !
+stored-slice @ 32 u@+ stored-slice !
+stored-seqno !
+stored-slice @ 32 B@+ stored-slice !
+stored-pubkey !
+stored-slice @ dict@+ stored-slice !
+stored-queue !
+stored-slice @ Gram@+ stored-slice !
+stored-locked !
+
+stored-seqno @ seqno @ <> abort"Test 4 failed. Reason: stored seqno is different from target."
+
+variable fee
+2 fee !
+
+{ 100 fee @ - Gram* roll-under @ 1- / } : calc-payout
+
+variable expected-payout
+amount @ calc-payout * nGram expected-payout !
+
+expected-payout @ stored-locked @ .s
+
+expected-payout @ stored-locked @ = 1+ abort"Test 4 failed. Reason: stored liabilities is different from target."
+
+variable stored-bet
+
+variable stored-bet-roll-under
+variable stored-bet-amount
+variable stored-bet-player-addr
+variable stored-bet-ref-addr
+variable stored-bet-ref-bonus
+variable stored-bet-seed
+
+bet-id @ stored-queue @ 32 udict@ 1+
+abort"Test 4 failed. Reason: bet with specified id not found."
+stored-bet !
+
+stored-bet @ 8 u@+ stored-bet !
+stored-bet-roll-under !
+stored-bet @ Gram@+ stored-bet !
+stored-bet-amount !
+stored-bet @ 1 i@+ 1 u@+ stored-bet ! // -1:0000000000000000000000000000000000000000000000000000000000000000
+2constant stored-bet-player-addr
+stored-bet @ 1 i@+ 256 u@+ stored-bet !
+2constant stored-bet-ref-addr
+stored-bet @ Gram@+ stored-bet !
+stored-bet-ref-bonus !
+stored-bet @ 256 u@+ stored-bet !
+stored-bet-seed !
+
+stored-bet @ remaining abort"Test 4 failed. Reason: storage data overflow."
+
+// == End parse storage
+
+roll-under @ stored-bet-roll-under @ =
+variable is-roll-under-equal
+is-roll-under-equal !
+is-roll-under-equal @ 1 +
+abort"Test 4 failed. Reason: stored bet roll-under is different from target."
+
+amount @ stored-bet-amount @ =
+variable is-amount-equal
+is-amount-equal !
+is-amount-equal @ 1 +
+abort"Test 4 failed. Reason: stored bet amount is different from target."
+
+<b wallet-addr addr, b> hashu
+<b stored-bet-player-addr addr, b> hashu =
+1 + abort"Test 4 failed. Reason: stored bet player address is different from target."
+
+// <b contract-addr addr, b> hashu
+// <b stored-bet-ref-addr addr, b> hashu =
+// 1 + abort"Test 4 failed. Reason: stored bet referral address is different from target."
+
+variable expected-ref-bonus
+0 expected-ref-bonus !
+
+expected-ref-bonus @ stored-bet-ref-bonus @ =
+variable is-ref-bonus-equal
+is-ref-bonus-equal !
+is-ref-bonus-equal @ 1 +
+abort"Test 4 failed. Reason: stored bet referral bonus is different from target."
+
+stored-bet-seed @ 0 = abort"Test 4 failed. Reason: stored bet seed is null."
