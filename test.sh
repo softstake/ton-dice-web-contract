@@ -5,4 +5,9 @@ echo "Building..."
 
 echo "\nBuilding completed\n"
 cd tests
-fift -s test-runner.fif *-test.fif
+
+for x in `ls -1 *-test.fif`
+do
+    echo $x
+    fift -s test-runner.fif $x
+done

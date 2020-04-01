@@ -5,7 +5,7 @@
 variable seqno
 0 seqno !
 
-<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
 
 variable roll-under
 97 roll-under !
