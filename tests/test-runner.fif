@@ -1,0 +1,11 @@
+#!/usr/bin/fift -s
+
+{ ."usage: " @' $0 type ." <test-1> [<test-2>] ... [<test-n>]" cr
+  ."Simple test runner" cr
+} : usage
+
+$# 1 < ' usage if
+
+variable n
+1 n !
+{ n @ dup $() 1 ' include does execute n @ 1+ n ! } $# times

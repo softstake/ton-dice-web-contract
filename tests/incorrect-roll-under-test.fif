@@ -1,0 +1,36 @@
+// Test #6. Incorrect roll under.
+
+"test-env.fif" include
+
+variable seqno
+0 seqno !
+
+<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+
+variable roll-under
+97 roll-under !
+variable bet-id
+19 bet-id !
+variable amount
+2 Gram* amount !
+
+roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+<b 0 32 u, game-params $, b> <s message-to-send !
+
+<b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
+
+amount @
+meta
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 40 <> abort"Test #6 Not passed"
