@@ -108,9 +108,9 @@ slice decode(slice s) {
   send_raw_message(msg.end_cell(), mode);
 }
 
-(int, int, cell, int) load_data() {
+(cell, int, int, cell, int) load_data() {
   var ds = get_data().begin_parse();
-  var res = (ds~load_uint(32), ds~load_uint(256), ds~load_dict(), ds~load_grams()); ;; seqno pubk queue lock
+  var res = (ds~load_dict(), ds~load_uint(64), ds~load_uint(256), ds~load_dict(), ds~load_grams()); ;; temp last_cleaned pubk queue lock
   ds.end_parse();
   return res;
 }
@@ -125,15 +125,16 @@ int calc_payout(int amount, int roll_under, int fee) {
 }
 
 (slice, int) get_bet?(int id) {
-  var (_, _, queue, _) = load_data();
+  var (_, _, _, queue, _) = load_data();
   return queue.udict_get?(32, id);
 }
 
 () resolve_bet(int bet_id, slice sig) impure {
-  var (stored_seqno, public_key, queue, locked) = load_data();
+  var (temp, last_cleaned, public_key, queue, locked) = load_data();
   var (bet, found) = get_bet?(bet_id);
   throw_unless(61, found);
 
+  _ = bet~load_uint(64); ;; last_cleaned
   int roll_under = bet~load_uint(8);
   int amount = bet~load_grams();
   slice player_addr = bet~load_msg_addr();
@@ -166,7 +167,7 @@ int calc_payout(int amount, int roll_under, int fee) {
     payout = 1;
     ;; "TONBET.IO - random roll " - x{544F4E4245542E494F202D2072616E646F6D20726F6C6C20} STSLICECONST
     ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
-    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D2072616E646F6D20726F6C6C20, 192).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
+    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
     send_message_back(player_addr, msg, payout, 1);
   }
 
@@ -179,16 +180,16 @@ int calc_payout(int amount, int roll_under, int fee) {
 
   locked -= possible_payout;
 
-  return set_data(begin_cell().store_uint(stored_seqno + 1, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
+  set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
 }
 
 () add_to_queue(int bet_id, slice s, int seed, int payout) impure {
-  var (stored_seqno, public_key, queue, locked) = load_data();
+  var (temp, last_cleaned, public_key, queue, locked) = load_data();
   int ok = queue~udict_add_builder?(32, bet_id, begin_cell()
     .store_slice(s)
     .store_uint(seed, 256));
   throw_unless(61, ok);
-  set_data(begin_cell().store_uint(stored_seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).end_cell());
+  set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).end_cell());
 }
 
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
@@ -248,7 +249,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   int bet_id = str_to_num(part2);
   throw_if(41, bet_id > 9999);
 
-  var (_, _, _, locked) = load_data();
+  var (_, last_cleaned, _, _, locked) = load_data();
   int bank = first(get_balance());
   int possible_payout = calc_payout(msg_value, roll_under, fee);
   int liabilities = possible_payout + ref_bonus;
@@ -274,6 +275,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   ;; }
 
   slice s = begin_cell()
+      .store_uint(last_cleaned, 64)
       .store_uint(roll_under, 8)
       .store_grams(msg_value)
       .store_slice(s_addr)
@@ -292,26 +294,29 @@ int calc_payout(int amount, int roll_under, int fee) {
 }
 
 () recv_external(slice in_msg) impure {
-  var (stored_seqno, public_key, queue, locked) = load_data();
+  var (temp, last_cleaned, public_key, queue, locked) = load_data();
   var signature = in_msg~load_bits(512);
   var cs = in_msg~load_ref().begin_parse();
   throw_unless(34, check_signature(slice_hash(cs), signature, public_key)); ;; owner check
-  int msg_seqno = cs~load_uint(32);
-  throw_unless(33, msg_seqno == stored_seqno);
+
+  int query_id = cs~load_uint(64);
+  var bound = (now() << 32);
+  throw_if(35, query_id < bound);
+
+  (_, var found?) = temp.udict_get?(64, query_id);
+  throw_if(32, found?);
 
   int op = cs~load_uint(32);
   if (op == 0x11111111) {
       ;; init
       accept_message();
-      set_data(begin_cell().store_uint(stored_seqno + 1, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
-      return ();
   }
   if (op == 0x22222222) {
     ;; resolve bet
     int bet_id = cs~load_uint(32);
     slice sig = cs~load_bits(512);
 
-    return resolve_bet(bet_id, sig);
+    resolve_bet(bet_id, sig);
   }
   if (op == 0x33333333) {
     ;; upgrade code
@@ -319,23 +324,44 @@ int calc_payout(int amount, int roll_under, int fee) {
     accept_message();
     set_code(code);
   }
+
+  var (_, _, _, queue, locked) = load_data(); ;; this data may have been updated
+
+  bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
+    temp~udict_set_builder(64, query_id, begin_cell());
+    var old_temp = temp;
+    do {
+      var (temp', i, _, f) = temp.udict_delete_get_min(64);
+      f~touch();
+      if (f) {
+        f = (i < bound);
+      }
+      if (f) {
+        temp = temp';
+        last_cleaned = i;
+      }
+    } until (~ f);
+
+    set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
 }
 
 ;; Get methods
 
-int get_seqno() method_id {
-  (int stored_seqno, _, _, _) = load_data();
-  return stored_seqno;
+;; returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
+int processed?(int query_id) method_id {
+  var (temp, last_cleaned, _, _, _) = load_data();
+  (_, var found) = temp.udict_get?(64, query_id);
+  return found ? true : - (query_id <= last_cleaned);
 }
 
 int get_bet_seed(int bet_id) method_id {
     var (bet, found) = get_bet?(bet_id);
     throw_unless(61, found);
-    (_, _, _, _, _, int seed) = (bet~load_uint(8), bet~load_grams(), bet~load_msg_addr(), bet~load_msg_addr(), bet~load_grams(), bet~load_uint(256));
+    (_, _, _, _, _, _, int seed) = (bet~load_uint(64), bet~load_uint(8), bet~load_grams(), bet~load_msg_addr(), bet~load_msg_addr(), bet~load_grams(), bet~load_uint(256));
     return seed;
 }
 
 int get_liabilities() method_id {
-  (_, _, _, int locked) = load_data();
+  (_, _, _, _, int locked) = load_data();
   return locked;
 }
