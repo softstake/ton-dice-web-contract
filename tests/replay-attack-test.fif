@@ -1,0 +1,29 @@
+// Test #1. Simple replay attack simulation.
+
+"test-env.fif" include
+
+variable signature
+
+now timeout + 32 << <b x{11111111} s, b> hashu 32 1<<1- and + =: query-id
+
+dictnew constant init-temp-dict
+<b b> <s query-id init-temp-dict 64 udict! drop
+<b swap dict, query-id 64 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+
+<b query-id 64 u, x{11111111} s, b> message-to-sign !
+message-to-sign @ hashu owner_private_key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 32 <> abort"Test #1 Not passed"

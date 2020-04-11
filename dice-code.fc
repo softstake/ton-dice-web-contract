@@ -294,17 +294,19 @@ int calc_payout(int amount, int roll_under, int fee) {
 }
 
 () recv_external(slice in_msg) impure {
-  var (temp, last_cleaned, public_key, queue, locked) = load_data();
   var signature = in_msg~load_bits(512);
   var cs = in_msg~load_ref().begin_parse();
-  throw_unless(34, check_signature(slice_hash(cs), signature, public_key)); ;; owner check
+  int shash = slice_hash(cs);
 
-  int query_id = cs~load_uint(64);
+  var query_id = cs~load_uint(64);
   var bound = (now() << 32);
   throw_if(35, query_id < bound);
 
+  var (temp, last_cleaned, public_key, queue, locked) = load_data();
   (_, var found?) = temp.udict_get?(64, query_id);
   throw_if(32, found?);
+
+  throw_unless(34, check_signature(shash, signature, public_key)); ;; owner check
 
   int op = cs~load_uint(32);
   if (op == 0x11111111) {
@@ -328,19 +330,19 @@ int calc_payout(int amount, int roll_under, int fee) {
   var (_, _, _, queue, locked) = load_data(); ;; this data may have been updated
 
   bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
-    temp~udict_set_builder(64, query_id, begin_cell());
-    var old_temp = temp;
-    do {
-      var (temp', i, _, f) = temp.udict_delete_get_min(64);
-      f~touch();
-      if (f) {
-        f = (i < bound);
-      }
-      if (f) {
-        temp = temp';
-        last_cleaned = i;
-      }
-    } until (~ f);
+  temp~udict_set_builder(64, query_id, begin_cell());
+  var old_temp = temp;
+  do {
+    var (temp', i, _, f) = temp.udict_delete_get_min(64);
+    f~touch();
+    if (f) {
+      f = (i < bound);
+    }
+    if (f) {
+      temp = temp';
+      last_cleaned = i;
+    }
+  } until (~ f);
 
     set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).end_cell());
 }
