@@ -149,10 +149,10 @@ _ unpack_bet(slice bet) inline_ref {
   int seed = bet~load_uint(256);
   throw_unless(34, check_signature(seed, sig, public_key));
 
+  accept_message();
+
   (queue, int ok) = queue.udict_delete?(32, bet_id);
   throw_unless(62, ok);
-
-  accept_message();
 
   int fee = 2;
   if (ref_bonus > 0) {
@@ -210,13 +210,6 @@ _ unpack_bet(slice bet) inline_ref {
 
   throw_if(42, msg_value < 100000000);
 
-  ;; if (msg_value < 100000000) {
-  ;;   ;; "TONBET.IO - min bet is 0.1" - x{544F4E4245542E494F202D206D696E2062657420697320302E31}
-  ;;   slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206D696E2062657420697320302E31, 208).end_cell().begin_parse();
-  ;;   send_message_back(s_addr, msg, 0, 64);
-  ;;   return ();
-  ;; }
-
   var (part1, n) = slice_to_sep(in_msg, 32); ;; roll_under
   var (part2, n) = slice_to_sep(in_msg, n + 8); ;; bet_id
   n += 8;
@@ -264,21 +257,11 @@ _ unpack_bet(slice bet) inline_ref {
   ;; "TONBET.IO - fund overflow" - x{544F4E4245542E494F202D2066756E64206F766572666C6F77}
   slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D2066756E64206F766572666C6F77, 200).end_cell().begin_parse();
 
-  ;; if (available_balance < 0) {
-  ;;   send_message_back(s_addr, msg, 0, 64);
-  ;;   return ();
-  ;; }
-
   throw_if(43, available_balance < 0);
 
   int max_win = available_balance / 4;
 
   throw_if(44, possible_payout > max_win);
-
-  ;; if (possible_payout > max_win) {
-  ;;   send_message_back(s_addr, msg, 0, 64);
-  ;;   return ();
-  ;; }
 
   slice s = begin_cell()
       .store_uint(last_cleaned, 64)
@@ -318,12 +301,12 @@ _ unpack_bet(slice bet) inline_ref {
   if (op == 0x11111111) {
     ;; init
     accept_message();
+    return ();
   }
   if (op == 0x22222222) {
     ;; resolve bet
     int bet_id = cs~load_uint(32);
     slice sig = cs~load_bits(512);
-
     resolve_bet(bet_id, sig);
   }
   if (op == 0x33333333) {
@@ -369,8 +352,8 @@ tuple active_bets() method_id {
   do {
     (id, var bs, var found) = queue.udict_get_prev?(32, id);
     if (found) {
-      var info = [unpack_bet(bs)];
-      list = cons(pair(id, info), list);
+      var (_, roll_under, amount, player_addr, ref_addr, ref_bonus, seed) = unpack_bet(bs);
+      list = cons([id, [roll_under, amount, parse_std_addr(player_addr), parse_std_addr(ref_addr), ref_bonus, seed]], list);
     }
   } until (~ found);
   return list;
