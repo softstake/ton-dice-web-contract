@@ -7,18 +7,18 @@ now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
+0 =: next-id
+
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 97 roll-under !
-variable bet-id
-19 bet-id !
 variable amount
 2 Gram* amount !
 
-roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+roll-under @ (.) constant game-params // Roll under 95, bet id 19
 <b 0 32 u, game-params $, b> <s message-to-send !
 
 <b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta

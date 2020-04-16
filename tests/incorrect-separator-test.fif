@@ -7,18 +7,20 @@ now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
+0 =: next-id
+
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !
-variable bet-id
-9999 bet-id !
+variable ref-addr
+"EQBm-Vvz2kup5C3Sd-pQofwJ-XYvHWD2C9LwuC8asmshCoci" ref-addr !
 variable amount
 2 Gram* amount !
 
-roll-under @ (.) +"*" bet-id @ (.) $+ constant game-params
+roll-under @ (.) +"*" ref-addr @ $+ constant game-params
 <b 0 32 u, game-params $, b> <s message-to-send !
 
 <b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
@@ -37,4 +39,4 @@ variable exit_code
 drop
 exit_code !
 ."Exit code " exit_code @ . cr
-exit_code @ 42 <> abort"Test #8 Not passed"
+exit_code @ 35 <> abort"Test #8 Not passed"

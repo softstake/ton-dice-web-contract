@@ -7,18 +7,18 @@ now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
+0 =: next-id
+
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !
-variable bet-id
-19 bet-id !
 variable amount
 2 Gram* amount !
 
-roll-under @ (.) +"," bet-id @ (.) $+ constant game-params // Roll under 95, bet id 19
+roll-under @ (.) constant game-params // Roll under 95, bet id 19
 <b 0 32 u, game-params $, b> <s message-to-send !
 
 <b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
@@ -79,13 +79,10 @@ variable stored-bet-ref-addr
 variable stored-bet-ref-bonus
 variable stored-bet-seed
 
-bet-id @ stored-queue @ 32 udict@ 1+
+next-id stored-queue @ 32 udict@ 1+
 abort"Test 4 failed. Reason: bet with specified id not found."
 stored-bet !
 
-
-stored-bet @ 64 u@+ stored-bet !
-stored-bet-last-cleaned !
 stored-bet @ 8 u@+ stored-bet !
 stored-bet-roll-under !
 stored-bet @ Gram@+ stored-bet !
@@ -102,12 +99,6 @@ stored-bet-seed !
 stored-bet @ remaining abort"Test 4 failed. Reason: storage data overflow."
 
 // == End parse storage
-
-last-cleaned @ stored-bet-last-cleaned @ =
-variable is-last-cleaned-equal
-is-last-cleaned-equal !
-is-last-cleaned-equal @ 1 +
-abort"Test 4 failed. Reason: stored bet last-cleaned is different from target."
 
 roll-under @ stored-bet-roll-under @ =
 variable is-roll-under-equal

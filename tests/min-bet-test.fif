@@ -7,9 +7,11 @@ now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
+0 =: next-id
+
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, b> storage !
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !

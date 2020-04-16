@@ -1,0 +1,32 @@
+// Test #11. Sending an expired order.
+
+"test-env.fif" include
+
+variable signature
+variable last-cleaned
+now last-cleaned !
+
+now 1- 32 << <b x{11111111} s, b> hashu 32 1<<1- and + =: expired-query-id
+
+0 =: next-id
+
+dictnew constant init-temp-dict
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, 0 Gram, next-id 32 u, b> storage !
+
+<b expired-query-id 64 u, x{11111111} s, b> message-to-sign !
+message-to-sign @ hashu owner_private_key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx
+
+variable exit_code
+
+drop
+exit_code !
+."Exit code " exit_code @ . cr
+exit_code @ 35 <> abort"Test #1 Not passed"
