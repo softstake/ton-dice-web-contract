@@ -293,7 +293,6 @@ _ unpack_bet(slice bet) inline_ref {
   if (op == 0x11111111) {
     ;; init
     accept_message();
-    return ();
   }
   if (op == 0x22222222) {
     ;; resolve bet

@@ -27,7 +27,9 @@ file-base +".pk" load-generate-keypair
 
 dictnew constant init-dict
 
-<b init-dict dict, 0 64 u, public-key B, init-dict dict, 0 Gram, b> // initial persistance data
+0 =: next-id
+
+<b init-dict dict, 0 64 u, public-key B, init-dict dict, 0 Gram, next-id 32 u, b> // initial persistance data
 null
 // no libraries
 <b b{0011} s, contract-code ref, rot ref, swap dict, b> // StateInit: code, data, libs
