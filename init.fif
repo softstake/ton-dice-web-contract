@@ -9,7 +9,7 @@
 
 $# 1 < ' usage if // Checks that there's enough arguments
 
-60 =: timeout   // external message expires in 60 seconds
+65536 constant timeout   // init query times out in 65536 seconds
 
 // Parsing command-line arguments
 
