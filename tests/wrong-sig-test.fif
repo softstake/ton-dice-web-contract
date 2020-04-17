@@ -8,12 +8,15 @@ drop
 
 variable signature
 
-variable seqno
-0 seqno !
+0 =: next-id
 
-<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+now timeout + 32 << <b x{11111111} s, b> hashu 32 1<<1- and + =: last-cleaned
 
-<b seqno @ 32 u, x{11111111} s, b> message-to-sign !
+dictnew constant init-temp-dict
+<b b> <s last-cleaned init-temp-dict 64 udict! drop
+<b swap dict, last-cleaned 64 u, owner_public_key B, init-queue-dict dict, 0 Gram, next-id 32 u, b> storage !
+
+<b last-cleaned 1+ 64 u, x{11111111} s, b> message-to-sign !
 message-to-sign @ hashu not-owner-private-key ed25519_sign_uint signature !
 <b signature @ B, message-to-sign @ ref, b> <s message-to-send !
 

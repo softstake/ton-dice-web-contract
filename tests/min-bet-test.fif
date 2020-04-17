@@ -2,10 +2,16 @@
 
 "test-env.fif" include
 
-variable seqno
-0 seqno !
+variable last-cleaned
+now last-cleaned !
+variable locked-grams
+0 locked-grams !
 
-<b seqno @ 32 u, owner_public_key B, init-queue-dict dict, 0 Gram, b> storage !
+0 =: next-id
+
+dictnew constant init-temp-dict
+
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !
