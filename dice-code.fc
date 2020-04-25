@@ -340,12 +340,17 @@ tuple active_bets() method_id {
   var (_, _, _, queue, _, _) = load_data();
   var id = (1 << 32);
   var list = null();
+  var cnt = 0;
   do {
-    (id, var bs, var found) = queue.udict_get_prev?(32, id);
-    if (found) {
-      var (roll_under, amount, player_addr, ref_addr, ref_bonus, seed) = unpack_bet(bs);
-      list = cons([id, [roll_under, amount, parse_std_addr(player_addr), parse_std_addr(ref_addr), ref_bonus, seed]], list);
+    var found = 0;
+    if (cnt < 300) {
+      (id, var bs, found) = queue.udict_get_prev?(32, id);
+      if (found) {
+        var (roll_under, amount, player_addr, ref_addr, ref_bonus, seed) = unpack_bet(bs);
+        list = cons([id, [roll_under, amount, parse_std_addr(player_addr), parse_std_addr(ref_addr), ref_bonus, seed]], list);
+      }
     }
+    cnt = cnt + 1;
   } until (~ found);
   return list;
 }
