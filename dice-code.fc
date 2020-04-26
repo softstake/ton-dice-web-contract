@@ -230,7 +230,7 @@ _ unpack_bet(slice bet) inline_ref {
     slice possible_ref_addr = begin_cell().store_uint(68, 7).store_int(wc~load_int(2), 8).store_slice(res).end_cell().begin_parse();
     possible_ref_addr~skip_bits(4);
 
-    ifnot (slice_equal(possible_ref_addr, s_addr) & slice_equal(possible_ref_addr, my_address())) {
+    ifnot (slice_equal(possible_ref_addr, s_addr) | slice_equal(possible_ref_addr, my_address())) {
       ref_addr = possible_ref_addr;
       fee -= 1; ;; player bonus
       ref_bonus = msg_value * 5 / 1000;
