@@ -1,0 +1,115 @@
+"test-env.fif" include
+
+variable last-cleaned
+now last-cleaned !
+variable locked-grams
+0 locked-grams !
+
+"../addresses/owner.addr" load-address
+2dup 2constant contract-addr
+
+"../keys/owner.pk" file>B constant owner_private_key
+owner_private_key priv>pub constant owner_public_key
+
+0 =: next-id
+
+dictnew constant init-temp-dict
+
+<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
+
+variable roll-under
+variable amount
+
+{
+96 roll-under !
+2 Gram* amount !
+
+roll-under @ (.) =: game-params // Roll under 95, bet id 19
+<b 0 32 u, @' game-params $, b> <s message-to-send !
+
+
+amount @
+<b b{1000100} s, contract-addr addr, 0 Gram, b{00} s, b>
+message-to-send @
+recv_internal
+contract-code <s
+storage @
+c7
+runvmctx swap abort"failed"
+
+storage !
+
+} 300 times
+
+// == Parse storage to check
+
+variable stored-slice
+variable stored-temp
+variable stored-last-cleaned
+variable stored-pubkey
+variable stored-queue
+variable stored-locked
+variable stored-next-id
+
+storage @ <s stored-slice !
+stored-slice @ dict@+ stored-slice !
+stored-temp !
+stored-slice @ 64 u@+ stored-slice !
+stored-last-cleaned !
+stored-slice @ 256 u@+ stored-slice !
+stored-pubkey !
+stored-slice @ dict@+ stored-slice !
+stored-queue !
+stored-slice @ Gram@+ stored-slice !
+stored-locked !
+stored-slice @ 32 u@+ stored-slice !
+stored-next-id !
+
+// stored-next-id @ .
+
+variable stored-bet
+
+variable stored-bet-last-cleaned
+variable stored-bet-roll-under
+variable stored-bet-amount
+variable stored-bet-player-addr
+variable stored-bet-ref-addr
+variable stored-bet-ref-bonus
+variable stored-bet-seed
+
+100 stored-queue @ 32 udict@ 1+
+abort"Test 4 failed. Reason: bet with specified id not found."
+stored-bet !
+
+stored-bet @
+
+<{
+8 LDU	//  bet_id sig temp last_cleaned public_key queue locked next_id roll_under bet
+LDGRAMS	//  bet_id sig temp last_cleaned public_key queue locked next_id roll_under amount bet
+LDMSGADDR	//  bet_id sig temp last_cleaned public_key queue locked next_id roll_under amount player_addr bet
+LDMSGADDR	//  bet_id sig temp last_cleaned public_key queue locked next_id roll_under amount player_addr ref_addr bet
+LDGRAMS	//  bet_id sig temp last_cleaned public_key queue locked next_id roll_under amount player_addr ref_addr ref_bonus bet
+256 LDU
+DROP
+}>c
+
+<s runvmcode
+
+. stored-bet-seed !
+
+stored-bet-seed @ owner_private_key ed25519_sign_uint constant sig
+
+now timeout + 32 << <b x{22222222} s, 100 32 u, sig B, b> hashu 32 1<<1- and + =: query-id
+
+variable signature
+
+<b query-id 64 u, x{22222222} s, 100 32 u, sig B, b> message-to-sign !
+message-to-sign @ hashu owner_private_key ed25519_sign_uint signature !
+<b signature @ B, message-to-sign @ ref, b> <s message-to-send !
+
+message-to-send @
+recv_external
+contract-code <s
+storage @
+c7
+runvmctx

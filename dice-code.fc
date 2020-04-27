@@ -97,7 +97,7 @@ slice decode(slice s) {
     return end_cell(res).begin_parse();
 }
 
-() send_message_back(slice addr, slice body, int grams, int mode) impure {
+() send_message_back(slice addr, slice body, int grams, int mode) impure inline_ref {
   var msg = begin_cell()
     .store_uint(0x18, 6)
     .store_slice(addr)
@@ -124,7 +124,7 @@ int calc_payout(int amount, int roll_under, int fee) {
   return amount * (((100 - fee) * 1000000000) / (roll_under - 1)) / 1000000000;
 }
 
-(slice, int) get_bet?(int id) inline_ref {
+(slice, int) get_bet?(int id) inline_ref method_id {
   var (_, _, _, queue, _, _) = load_data();
   return queue.udict_get?(32, id);
 }
@@ -146,42 +146,31 @@ _ unpack_bet(slice bet) inline_ref {
   slice ref_addr = bet~load_msg_addr();
   int ref_bonus = bet~load_grams();
   int seed = bet~load_uint(256);
-  throw_unless(34, check_signature(seed, sig, public_key));
+  throw_unless(37, check_signature(seed, sig, public_key));
+
+  int fee = 2;
+  if (ref_bonus > 0) {
+    fee -= 1; ;; player bonus
+   }
+
+  int possible_payout = calc_payout(amount, roll_under, fee);
+  int random_roll = get_random_roll(sig);
 
   accept_message();
 
   (queue, int ok) = queue.udict_delete?(32, bet_id);
   throw_unless(62, ok);
 
-  int fee = 2;
-  if (ref_bonus > 0) {
-    fee -= 1; ;; player bonus
-  }
-
-  int possible_payout = calc_payout(amount, roll_under, fee);
-  int random_roll = get_random_roll(sig);
-
-  int payout = 0;
+  int payout = 1;
   if (random_roll < roll_under) {
     payout += possible_payout;
-    ;; "TONBET.IO - lucky number " - x{544F4E4245542E494F202D206C75636B79206E756D62657220} STSLICECONST
-    ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
-    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
-    send_message_back(player_addr, msg, payout, 2);
-  } else {
-    payout = 1;
-    ;; "TONBET.IO - random roll " - x{544F4E4245542E494F202D2072616E646F6D20726F6C6C20} STSLICECONST
-    ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
-    slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
-    send_message_back(player_addr, msg, payout, 1);
   }
 
-  if (ref_bonus > 0) {
-    ;; "Play on TONBET.IO" - x{506C6179206F6E20544F4E4245542E494F} STSLICECONST
-    slice msg = begin_cell().store_uint(0x506C6179206F6E20544F4E4245542E494F, 136).end_cell().begin_parse();
-    send_message_back(ref_addr, msg, ref_bonus, 2);
-    locked -= ref_bonus;
-  }
+  var msg = begin_cell()
+            .store_uint(0x18, 6)
+            .store_slice(player_addr)
+            .store_grams(payout);
+      send_raw_message(msg.end_cell(), 2);
 
   locked -= possible_payout;
 
