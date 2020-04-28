@@ -173,13 +173,13 @@ _ unpack_bet(slice bet) inline_ref {
     ;; "TONBET.IO - random roll " - x{544F4E4245542E494F202D2072616E646F6D20726F6C6C20} STSLICECONST
     ;; " fell for betting with id " - x{2066656C6C20666F722062657474696E67207769746820696420} STSLICECONST
     slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
-    send_message_back(player_addr, msg, payout, 1);
+    send_message_back(player_addr, msg, payout, 2);
   }
 
   if (ref_bonus > 0) {
     ;; "Play on TONBET.IO" - x{506C6179206F6E20544F4E4245542E494F} STSLICECONST
     slice msg = begin_cell().store_uint(0x506C6179206F6E20544F4E4245542E494F, 136).end_cell().begin_parse();
-    send_message_back(ref_addr, msg, ref_bonus, 1);
+    send_message_back(ref_addr, msg, ref_bonus, 2);
     locked -= ref_bonus;
   }
 
