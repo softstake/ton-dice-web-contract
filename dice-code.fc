@@ -176,7 +176,28 @@ _ unpack_bet(slice bet) inline_ref {
     .store_slice(s)
     .store_uint(seed, 256));
   throw_unless(61, ok);
+
   set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).store_uint(next_id + 1, 32).end_cell());
+}
+
+(cell) garbage_collector(cell temp, int bound, int limit) impure {
+  var cnt = 0;
+  do {
+    var f = 0;
+    if (cnt < limit) {
+      var (temp', i, _, f) = temp.udict_delete_get_min(64);
+      f~touch();
+      if (f) {
+        f = (i < bound);
+      }
+      if (f) {
+        temp = temp';
+      }
+    }
+    cnt = cnt + 1;
+  } until (~ f);
+
+  return temp;
 }
 
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
@@ -253,6 +274,7 @@ _ unpack_bet(slice bet) inline_ref {
     .end_cell().begin_parse()));
 
   int rand_seed = random();
+
   return add_to_queue(s, rand_seed, liabilities);
 }
 
@@ -293,18 +315,7 @@ _ unpack_bet(slice bet) inline_ref {
 
   bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
   temp~udict_set_builder(64, query_id, begin_cell());
-  var old_temp = temp;
-  do {
-    var (temp', i, _, f) = temp.udict_delete_get_min(64);
-    f~touch();
-    if (f) {
-      f = (i < bound);
-    }
-    if (f) {
-      temp = temp';
-      last_cleaned = i;
-    }
-  } until (~ f);
+  temp = garbage_collector(temp, bound, 15);
 
   set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
 }
@@ -335,6 +346,20 @@ tuple active_bets() method_id {
     cnt = cnt + 1;
   } until (~ found);
   return list;
+}
+
+int temp_count() method_id {
+  var (temp, _, _, _, _, _) = load_data();
+  var id = (1 << 64);
+  var cnt = 0;
+  do {
+    var found = 0;
+    if (cnt < 300) {
+      (id, _, found) = temp.udict_get_prev?(64, id);
+    }
+    cnt = cnt + 1;
+  } until (~ found);
+  return cnt;
 }
 
 int get_liabilities() method_id {
