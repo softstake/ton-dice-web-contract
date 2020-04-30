@@ -315,7 +315,7 @@ _ unpack_bet(slice bet) inline_ref {
 
   bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
   temp~udict_set_builder(64, query_id, begin_cell());
-  temp = garbage_collector(temp, bound, 50);
+  temp = garbage_collector(temp, bound, 15);
 
   set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
 }
