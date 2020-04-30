@@ -313,7 +313,7 @@ _ unpack_bet(slice bet) inline_ref {
 
   var (_, _, _, queue, locked, _) = load_data(); ;; this data may have been updated
 
-  bound -= (64 << 32);   ;; clean up records expired more than 34 seconds ago
+  bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
   temp~udict_set_builder(64, query_id, begin_cell());
   temp = garbage_collector(temp, bound, 50);
 
