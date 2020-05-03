@@ -97,24 +97,24 @@ slice decode(slice s) {
     return end_cell(res).begin_parse();
 }
 
-(cell, int, int, cell, int, int) load_data() inline_ref {
+(int, int, cell, int, int) load_data() inline_ref {
   var ds = get_data().begin_parse();
-  var res = (ds~load_dict(), ds~load_uint(64), ds~load_uint(256), ds~load_dict(), ds~load_grams(), ds~load_uint(32)); ;; temp last_cleaned pubk queue lock next_id
+  var res = (ds~load_uint(32), ds~load_uint(256), ds~load_dict(), ds~load_grams(), ds~load_uint(32)); ;; seqno pubk queue locked next_id
   ds.end_parse();
   return res;
 }
 
-int get_random_roll(slice sig) {
+int get_random_roll(slice sig) inline_ref {
   int seed = slice_hash(sig);
   return seed % 100 + 1;
 }
 
-int calc_payout(int amount, int roll_under, int fee) {
+int calc_payout(int amount, int roll_under, int fee) inline_ref {
   return amount * (((100 - fee) * 1000000000) / (roll_under - 1)) / 1000000000;
 }
 
 (slice, int) get_bet?(int id) inline_ref {
-  var (_, _, _, queue, _, _) = load_data();
+  var (_, _, queue, _, _) = load_data();
   return queue.udict_get?(32, id);
 }
 
@@ -125,7 +125,7 @@ _ unpack_bet(slice bet) inline_ref {
 }
 
 () resolve_bet(int bet_id, slice sig) impure inline_ref {
-  var (temp, last_cleaned, public_key, queue, locked, next_id) = load_data();
+  var (seqno, public_key, queue, locked, next_id) = load_data();
   var (bet, found) = get_bet?(bet_id);
   throw_unless(61, found);
 
@@ -167,37 +167,17 @@ _ unpack_bet(slice bet) inline_ref {
 
   locked -= possible_payout;
 
-  set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
+  set_data(begin_cell().store_uint(seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
 }
 
 () add_to_queue(slice s, int seed, int payout) impure {
-  var (temp, last_cleaned, public_key, queue, locked, next_id) = load_data();
+  var (seqno, public_key, queue, locked, next_id) = load_data();
   int ok = queue~udict_add_builder?(32, next_id, begin_cell()
     .store_slice(s)
     .store_uint(seed, 256));
   throw_unless(61, ok);
 
-  set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).store_uint(next_id + 1, 32).end_cell());
-}
-
-(cell) garbage_collector(cell temp, int bound, int limit) impure inline_ref {
-  var cnt = 0;
-  do {
-    var f = 0;
-    if (cnt < limit) {
-      var (temp', i, _, f) = temp.udict_delete_get_min(64);
-      f~touch();
-      if (f) {
-        f = (i < bound);
-      }
-      if (f) {
-        temp = temp';
-      }
-    }
-    cnt = cnt + 1;
-  } until (~ f);
-
-  return temp;
+  set_data(begin_cell().store_uint(seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).store_uint(next_id + 1, 32).end_cell());
 }
 
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
@@ -243,14 +223,11 @@ _ unpack_bet(slice bet) inline_ref {
   int roll_under = str_to_num(part1);
   throw_if(40, (roll_under < 2) | (roll_under > 94));
 
-  var (_, last_cleaned, _, _, locked, next_id) = load_data();
+  var (_, _, _, locked, next_id) = load_data();
   int bank = get_balance().pair_first();
   int possible_payout = calc_payout(msg_value, roll_under, fee);
   int liabilities = possible_payout + ref_bonus;
   int available_balance = bank - locked;
-
-  ;; "TONBET.IO - fund overflow" - x{544F4E4245542E494F202D2066756E64206F766572666C6F77}
-  slice msg = begin_cell().store_uint(0x544F4E4245542E494F202D2066756E64206F766572666C6F77, 200).end_cell().begin_parse();
 
   throw_if(43, available_balance < 0);
 
@@ -268,7 +245,6 @@ _ unpack_bet(slice bet) inline_ref {
     
   randomize_lt();
   randomize(slice_hash(begin_cell()
-      .store_uint(last_cleaned, 64)
       .store_uint(next_id, 32)
       .store_slice(s)
     .end_cell().begin_parse()));
@@ -283,26 +259,26 @@ _ unpack_bet(slice bet) inline_ref {
   var cs = in_msg~load_ref().begin_parse();
   int shash = slice_hash(cs);
 
-  var query_id = cs~load_uint(64);
-  var bound = (now() << 32);
-  throw_if(35, query_id < bound);
-
-  var (temp, last_cleaned, public_key, queue, locked, next_id) = load_data();
-  (_, var found?) = temp.udict_get?(64, query_id);
-  throw_if(32, found?);
+  var (seqno, public_key, queue, locked, next_id) = load_data();
 
   throw_unless(34, check_signature(shash, signature, public_key)); ;; owner check
 
+  int msg_seqno = cs~load_uint(32);
   int op = cs~load_uint(32);
-  if (op == 0x11111111) {
-    ;; init
-    accept_message();
-  }
+
   if (op == 0x22222222) {
     ;; resolve bet
     int bet_id = cs~load_uint(32);
     slice sig = cs~load_bits(512);
     resolve_bet(bet_id, sig);
+    return ();
+  }
+
+  throw_unless(33, msg_seqno == seqno);
+
+  if (op == 0x11111111) {
+    ;; init
+    accept_message();
   }
   if (op == 0x33333333) {
     ;; upgrade code
@@ -311,26 +287,13 @@ _ unpack_bet(slice bet) inline_ref {
     set_code(code);
   }
 
-  var (_, _, _, queue, locked, _) = load_data(); ;; this data may have been updated
-
-  bound -= (64 << 32);   ;; clean up records expired more than 64 seconds ago
-  temp~udict_set_builder(64, query_id, begin_cell());
-  temp = garbage_collector(temp, bound, 15);
-
-  set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
+  set_data(begin_cell().store_uint(seqno + 1, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked).store_uint(next_id, 32).end_cell());
 }
 
 ;; Get methods
 
-;; returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
-int processed?(int query_id) method_id {
-  var (temp, last_cleaned, _, _, _, _) = load_data();
-  (_, var found) = temp.udict_get?(64, query_id);
-  return found ? true : - (query_id <= last_cleaned);
-}
-
 tuple active_bets() method_id {
-  var (_, _, _, queue, _, _) = load_data();
+  var (_, _, queue, _, _) = load_data();
   var id = (1 << 32);
   var list = null();
   var cnt = 0;
@@ -348,21 +311,7 @@ tuple active_bets() method_id {
   return list;
 }
 
-int temp_count() method_id {
-  var (temp, _, _, _, _, _) = load_data();
-  var id = (1 << 64);
-  var cnt = 0;
-  do {
-    var found = 0;
-    if (cnt < 300) {
-      (id, _, found) = temp.udict_get_prev?(64, id);
-    }
-    cnt = cnt + 1;
-  } until (~ found);
-  return cnt;
-}
-
 int get_liabilities() method_id {
-  (_, _, _, _, int locked, _) = load_data();
+  (_, _, _, int locked, _) = load_data();
   return locked;
 }
