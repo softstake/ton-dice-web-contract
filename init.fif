@@ -25,20 +25,18 @@ file-base +".pk" load-generate-keypair
 =: private-key
 =: public-key
 
-dictnew constant init-dict
-
 0 =: next-id
 
-<b init-dict dict, 0 64 u, public-key B, init-dict dict, 0 Gram, next-id 32 u, b> // initial persistance data
+dictnew constant init-dict
+
+<b 0 32 u, public-key B, init-dict dict, 0 Gram, next-id 32 u, b> // initial persistance data
 null
 // no libraries
 <b b{0011} s, contract-code ref, rot ref, swap dict, b> // StateInit: code, data, libs
 
 dup hashu wc swap 2constant smartcont-addr // create address == hash(StateInit)
 
-now timeout + 32 << <b x{11111111} s, b> hashu 32 1<<1- and + =: query-id
-
-<b query-id 64 u, x{11111111} s, b> // body
+<b 0 32 u, x{11111111} s, b> // body
 dup hashu private-key ed25519_sign_uint // create signature of body
 
 <b b{1000100} s, smartcont-addr addr, b{000010} s, 3 roll <s s, b{0} s, swap B, swap ref, b> // enveloping message
