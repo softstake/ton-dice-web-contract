@@ -180,7 +180,7 @@ _ unpack_bet(slice bet) inline_ref {
   set_data(begin_cell().store_dict(temp).store_uint(last_cleaned, 64).store_uint(public_key, 256).store_dict(queue).store_grams(locked + payout).store_uint(next_id + 1, 32).end_cell());
 }
 
-(cell) garbage_collector(cell temp, int bound, int limit) impure {
+(cell) garbage_collector(cell temp, int bound, int limit) impure inline_ref {
   var cnt = 0;
   do {
     var f = 0;
