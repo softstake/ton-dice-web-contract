@@ -149,11 +149,12 @@ _ unpack_bet(slice bet) inline_ref {
 
   int payout = 1;
   int mode = 1;
-  slice body = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
+  cell part_ref = begin_cell().store_uint(0x5D20596F7572206E756D62657220697320, 136).store_slice(num_to_str(roll_under)).store_uint(0x2C20616C6C206E756D626572732067726561746572207468616E20, 216).store_slice(num_to_str(random_roll)).store_uint(0x206861766520776F6E2E, 80).end_cell();
+  slice body = begin_cell().store_uint(0x544F4E4245542E494F202D205B23, 112).store_slice(num_to_str(bet_id)).store_ref(part_ref).end_cell().begin_parse();
+
   if (random_roll < roll_under) {
     payout += possible_payout;
     mode = 2;
-    body = begin_cell().store_uint(0x544F4E4245542E494F202D206C75636B79206E756D62657220, 200).store_slice(num_to_str(random_roll)).store_uint(0x2066656C6C20666F722062657474696E67207769746820696420, 208).store_slice(num_to_str(bet_id)).end_cell().begin_parse();
   }
 
   var msg = begin_cell()
