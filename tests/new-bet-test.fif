@@ -53,7 +53,7 @@ stored-slice @ Gram@+ stored-slice !
 stored-locked !
 
 variable fee
-6 fee !
+4 fee !
 
 { 100 fee @ - Gram* roll-under @ 1- / } : calc-payout
 

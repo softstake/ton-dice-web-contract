@@ -236,7 +236,7 @@ _ unpack_bet(slice bet) inline_ref {
   int ok = queue~udict_add_builder?(32, next_id, begin_cell()
     .store_slice(s)
     .store_uint(rand_seed, 256));
-   throw_unless(61, ok);
+  throw_unless(61, ok);
 
    set_data(begin_cell().store_uint(seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked + liabilities).store_uint(next_id + 1, 32).end_cell());
 }
