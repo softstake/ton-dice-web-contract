@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Building..."
-./build.sh -1
+./build.sh 0
 
 echo "\nBuilding completed\n"
 cd tests

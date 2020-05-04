@@ -2,8 +2,6 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
@@ -11,13 +9,13 @@ variable locked-grams
 
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
+<b 0 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !
 
 variable fee
-2 fee !
+4 fee !
 
 { 100 fee @ - Gram* roll-under @ 1- / } : calc-payout
 
@@ -50,18 +48,12 @@ exit_code @ 0 <> abort"Test #9 Not passed"
 
 // Test #9.1. Possible payout is greater than the maximum.
 
-// variable roll-under
+variable roll-under
 96 roll-under !
 
 variable fee
-2 fee !
+4 fee !
 
-variable max-bet
-100000000000 Gram* 4 calc-payout * 1+ / max-bet ! // available_balance / (4 * payout + 1)
-
-max-bet @ .s
-
-// variable amount
 max-bet @ Gram + amount !
 
 roll-under @ (.) constant game-params

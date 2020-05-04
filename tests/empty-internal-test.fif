@@ -2,8 +2,6 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
 variable amount
@@ -13,7 +11,7 @@ variable amount
 
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
+<b 0 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 <b b> <s message-to-send !
 

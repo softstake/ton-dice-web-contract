@@ -2,8 +2,6 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
@@ -11,14 +9,14 @@ variable locked-grams
 
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
+<b 0 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
-96 roll-under !
+94 roll-under !
 variable amount
 2 Gram* amount !
 
-roll-under @ (.) constant game-params // Roll under 95, bet id 19
+roll-under @ (.) constant game-params // Roll under 94
 <b 0 32 u, game-params $, b> <s message-to-send !
 
 <b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
@@ -37,17 +35,14 @@ storage !
 // == Parse storage to check
 
 variable stored-slice
-variable stored-temp
-variable stored-last-cleaned
+variable stored-seqno
 variable stored-pubkey
 variable stored-queue
 variable stored-locked
 
 storage @ <s stored-slice !
-stored-slice @ dict@+ stored-slice !
-stored-temp !
-stored-slice @ 64 u@+ stored-slice !
-stored-last-cleaned !
+stored-slice @ 32 u@+ stored-slice !
+stored-seqno !
 stored-slice @ 32 B@+ stored-slice !
 stored-pubkey !
 stored-slice @ dict@+ stored-slice !
@@ -55,10 +50,8 @@ stored-queue !
 stored-slice @ Gram@+ stored-slice !
 stored-locked !
 
-stored-last-cleaned @ last-cleaned @ <> abort"Test 4 failed. Reason: stored last cleaned id is different from target."
-
 variable fee
-2 fee !
+4 fee !
 
 { 100 fee @ - Gram* roll-under @ 1- / } : calc-payout
 
@@ -71,7 +64,6 @@ expected-payout @ stored-locked @ = 1+ abort"Test 4 failed. Reason: stored liabi
 
 variable stored-bet
 
-variable stored-bet-last-cleaned
 variable stored-bet-roll-under
 variable stored-bet-amount
 variable stored-bet-player-addr
