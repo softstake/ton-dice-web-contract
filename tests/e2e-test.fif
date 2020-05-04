@@ -2,13 +2,8 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
-
-"../addresses/owner.addr" load-address
-2dup 2constant contract-addr
 
 "../keys/owner.pk" file>B constant owner_private_key
 owner_private_key priv>pub constant owner_public_key
@@ -23,15 +18,14 @@ variable roll-under
 variable amount
 
 {
-94 roll-under !
+96 roll-under !
 1 Gram* amount !
 
-roll-under @ (.) =: game-params // Roll under 95, bet id 19
+roll-under @ (.) =: game-params // roll under 96
 <b 0 32 u, @' game-params $, b> <s message-to-send !
 
-
 amount @
-<b b{1000100} s, contract-addr addr, 0 Gram, b{00} s, b>
+<b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b>
 message-to-send @
 recv_internal
 contract-code <s
@@ -77,12 +71,12 @@ stored-bet !
 stored-bet @
 
 <{
-8 LDU
-LDGRAMS
-LDMSGADDR
-LDMSGADDR
-LDGRAMS
-256 LDU
+8 LDU	//  _2 bet
+LDGRAMS	//  _2 _5 bet
+LDMSGADDR	//  _2 _5 _7 bet
+LDMSGADDR	//  _2 _5 _7 _9 bet
+LDGRAMS	//  _2 _5 _7 _9 _11 bet
+256 LDU	//  res res res res res res bet
 DROP
 }>c
 

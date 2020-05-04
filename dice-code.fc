@@ -238,7 +238,7 @@ _ unpack_bet(slice bet) inline_ref {
     .store_uint(rand_seed, 256));
   throw_unless(61, ok);
 
-   set_data(begin_cell().store_uint(seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked + liabilities).store_uint(next_id + 1, 32).end_cell());
+  set_data(begin_cell().store_uint(seqno, 32).store_uint(public_key, 256).store_dict(queue).store_grams(locked + liabilities).store_uint(next_id + 1, 32).end_cell());
 }
 
 () recv_external(slice in_msg) impure {

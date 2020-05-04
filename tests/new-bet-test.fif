@@ -2,8 +2,6 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
 

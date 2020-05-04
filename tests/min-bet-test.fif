@@ -2,8 +2,6 @@
 
 "test-env.fif" include
 
-variable last-cleaned
-now last-cleaned !
 variable locked-grams
 0 locked-grams !
 
@@ -11,19 +9,14 @@ variable locked-grams
 
 dictnew constant init-temp-dict
 
-<b init-temp-dict dict, last-cleaned @ 64 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
+<b 0 32 u, owner_public_key B, init-queue-dict dict, locked-grams @ Gram, next-id 32 u, b> storage !
 
 variable roll-under
 96 roll-under !
-variable bet-id
-9999 bet-id !
 variable amount
 0.05 Gram*/ amount !
 
-variable fee
-2 fee !
-
-roll-under @ (.) +"," bet-id @ (.) $+ constant game-params
+roll-under @ (.) constant game-params
 <b 0 32 u, game-params $, b> <s message-to-send !
 
 <b b{1000100} s, wallet-addr addr, 0 Gram, b{00} s, b> constant meta
